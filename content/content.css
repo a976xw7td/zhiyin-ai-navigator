@@ -1,0 +1,226 @@
+/* 智引 AI 导航导师 — 页面注入样式 */
+/* 所有选择器带 dhn- 前缀，防止污染宿主页面 */
+
+/* --- 高亮脉冲动画 --- */
+@keyframes dhn-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+  70% { box-shadow: 0 0 0 12px rgba(59, 130, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+@keyframes dhn-ripple {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+@keyframes dhn-arrow-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* --- 高亮覆盖层 --- */
+.dhn-highlight-overlay {
+  position: fixed;
+  z-index: 2147483646;
+  pointer-events: none;
+  border-radius: 6px;
+  animation: dhn-pulse 2s ease-out infinite;
+  border: 3px solid #3b82f6;
+  background: rgba(59, 130, 246, 0.08);
+  transition: all 0.3s ease;
+}
+
+/* --- 波纹圆圈 --- */
+.dhn-ripple-ring {
+  position: fixed;
+  z-index: 2147483645;
+  pointer-events: none;
+  border: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: dhn-ripple 1s ease-out forwards;
+}
+
+/* --- 指引箭头 --- */
+.dhn-guide-arrow {
+  position: fixed;
+  z-index: 2147483647;
+  pointer-events: none;
+  width: 24px;
+  height: 24px;
+  animation: dhn-arrow-bounce 1s ease-in-out infinite;
+}
+
+.dhn-guide-arrow::after {
+  content: '👇';
+  font-size: 20px;
+}
+
+/* --- Widget 气泡 — 从皮卡丘右侧弹出，竖排文字 --- */
+.dhn-widget-bubble {
+  position: fixed;
+  z-index: 2147483647;
+  max-height: 220px;
+  padding: 14px 12px;
+  border-radius: 24px;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #f8fafc;
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.6;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-50%) scale(0.8);
+  transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+}
+.dhn-widget-bubble.visible {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+
+/* 气泡三角尾巴 — 指向左侧（皮卡丘方向） */
+.dhn-widget-bubble::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -7px;
+  margin-top: -6px;
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-right: 8px solid rgba(15, 23, 42, 0.92);
+  pointer-events: none;
+}
+.dhn-widget-bubble.horizontal::before {
+  left: -7px;
+  margin-top: -6px;
+}
+.dhn-widget-bubble.visible::before {
+  opacity: 1;
+}
+
+/* 气泡向右偏移（气泡在皮卡丘左侧时，尾巴指向右侧） */
+.dhn-widget-bubble.tail-right::before {
+  left: auto;
+  right: -7px;
+  border-right: none;
+  border-left: 8px solid rgba(15, 23, 42, 0.92);
+}
+
+@media (prefers-color-scheme: light) {
+  .dhn-widget-bubble {
+    background: rgba(255, 255, 255, 0.95);
+    color: #1e293b;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  }
+  .dhn-widget-bubble::before {
+    border-right-color: rgba(255, 255, 255, 0.95);
+  }
+  .dhn-widget-bubble.tail-right::before {
+    border-left-color: rgba(255, 255, 255, 0.95);
+    border-right-color: transparent;
+  }
+}
+
+/* 水平模式（长文本 AI 回答） */
+.dhn-widget-bubble.horizontal {
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  max-width: 260px;
+  max-height: 320px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  line-height: 1.55;
+  font-size: 12.5px;
+  white-space: normal;
+  word-break: break-word;
+  overflow-y: auto;
+}
+
+/* 任务进度气泡 */
+.dhn-widget-bubble.progress {
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15);
+}
+
+/* --- Widget 入场动画 --- */
+#dhn-widget-host {
+  animation: widget-entrance 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  transform-origin: bottom right;
+}
+
+@keyframes widget-entrance {
+  from { opacity: 0; transform: scale(0.3); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* --- TaskQueue 步骤气泡 — 定位到目标元素上方 --- */
+.dhn-speech-bubble {
+  position: fixed;
+  z-index: 2147483646;
+  background: rgba(15, 23, 42, 0.88);
+  color: #f8fafc;
+  padding: 8px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  max-width: 200px;
+  line-height: 1.4;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  animation: dhn-fade-in 0.25s ease-out;
+}
+
+@keyframes dhn-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- 数字人头像小窗 (Mini Avatar) --- */
+.dhn-mini-avatar {
+  position: fixed;
+  z-index: 2147483647;
+  right: 20px;
+  bottom: 20px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+  pointer-events: all;
+}
+
+.dhn-mini-avatar:hover {
+  transform: scale(1.1);
+}
+
+.dhn-mini-avatar::after {
+  content: '🧑‍💻';
+  font-size: 28px;
+}
+
+/* --- 状态指示器 --- */
+.dhn-status-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  bottom: 4px;
+  right: 4px;
+  border: 2px solid white;
+}
+
+.dhn-status-dot.listening { background: #f59e0b; animation: dhn-pulse 1s infinite; }
+.dhn-status-dot.thinking { background: #8b5cf6; }
+.dhn-status-dot.speaking { background: #10b981; animation: dhn-pulse 1.5s infinite; }
+.dhn-status-dot.idle { background: #94a3b8; }

@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智引 AI 导航导师</title>
+<link rel="stylesheet" href="chat.css">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-base:   #ffffff;
+    --bg-panel:  #f1f5f9;
+    --bg-input:  #f8fafc;
+    --border:    #e2e8f0;
+    --text:      #1e293b;
+    --text-sec:  #64748b;
+    --text-mute: #94a3b8;
+    --btn-sec:   #e2e8f0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-base:   #0f172a;
+      --bg-panel:  #1e293b;
+      --bg-input:  #0f172a;
+      --border:    #334155;
+      --text:      #f8fafc;
+      --text-sec:  #94a3b8;
+      --text-mute: #475569;
+      --btn-sec:   #334155;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-base);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── 导航 Tab（原内容） ── */
+
+  #avatar-container {
+    flex: 0 0 auto;
+    min-height: 200px;
+    height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #avatar-glow {
+    position: absolute;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 70%);
+    transition: background 0.4s;
+    pointer-events: none;
+  }
+
+  #avatar-img {
+    position: relative;
+    z-index: 1;
+    width: 75%;
+    max-width: 220px;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 20px rgba(59,130,246,0.35));
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+
+  #avatar-container.listening #avatar-img {
+    animation: listen-bob 0.7s ease-in-out infinite;
+    filter: drop-shadow(0 6px 20px rgba(245,158,11,0.5));
+  }
+  #avatar-container.listening #avatar-glow {
+    background: radial-gradient(circle, rgba(245,158,11,0.22) 0%, transparent 70%);
+    animation: glow-pulse 0.7s ease-in-out infinite;
+  }
+
+  #avatar-container.thinking #avatar-img {
+    animation: think-tilt 1.4s ease-in-out infinite;
+    filter: drop-shadow(0 6px 20px rgba(139,92,246,0.5));
+  }
+  #avatar-container.thinking #avatar-glow {
+    background: radial-gradient(circle, rgba(139,92,246,0.22) 0%, transparent 70%);
+    animation: glow-pulse 1.4s ease-in-out infinite;
+  }
+
+  #avatar-container.speaking #avatar-img {
+    animation: speak-bounce 0.45s ease-in-out infinite;
+    filter: drop-shadow(0 6px 20px rgba(16,185,129,0.5));
+  }
+  #avatar-container.speaking #avatar-glow {
+    background: radial-gradient(circle, rgba(16,185,129,0.22) 0%, transparent 70%);
+    animation: glow-pulse 0.45s ease-in-out infinite;
+  }
+
+  @keyframes listen-bob {
+    0%, 100% { transform: translateY(-6px) scale(1.02); }
+    50% { transform: translateY(-14px) scale(1.05); }
+  }
+
+  @keyframes think-tilt {
+    0%, 100% { transform: translateY(-8px) rotate(-3deg); }
+    50% { transform: translateY(-14px) rotate(3deg); }
+  }
+
+  @keyframes speak-bounce {
+    0%, 100% { transform: translateY(0) scaleY(1); }
+    40% { transform: translateY(-14px) scaleY(0.96); }
+  }
+
+  @keyframes glow-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.25); opacity: 1; }
+  }
+
+  #status-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 12px;
+    background: var(--bg-panel);
+    font-size: 13px;
+    border-top: 0.5px solid var(--border);
+  }
+
+  #status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #94a3b8;
+    transition: background 0.3s;
+  }
+  #status-dot.listening { background: #f59e0b; animation: blink 0.8s infinite; }
+  #status-dot.thinking { background: #8b5cf6; }
+  #status-dot.speaking { background: #10b981; }
+  #status-dot.idle { background: #94a3b8; }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  #status-text { flex: 1; color: var(--text-sec); }
+
+  #quick-actions {
+    display: flex;
+    gap: 6px;
+    padding: 3px 10px 1px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
+  .quick-action {
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-input);
+    color: var(--text-sec);
+    font-size: 11px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+
+  .quick-action:hover {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+  }
+
+  #controls {
+    display: flex;
+    gap: 8px;
+    padding: 5px 12px;
+    background: var(--bg-panel);
+    border-top: 0.5px solid var(--border);
+  }
+
+  button {
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  #mic-btn {
+    flex: 1;
+    background: #3b82f6;
+    color: white;
+  }
+  #mic-btn:hover { background: #2563eb; }
+  #mic-btn.recording {
+    background: #ef4444;
+    animation: pulse-btn 1.5s infinite;
+  }
+
+  @keyframes pulse-btn {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+    50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+  }
+
+  #text-input {
+    flex: 2;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text);
+    font-size: 14px;
+  }
+  #text-input::placeholder { color: var(--text-mute); }
+
+  .settings-row {
+    padding: 4px 12px;
+    background: var(--bg-panel);
+    border-top: 0.5px solid var(--border);
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    font-size: 12px;
+  }
+
+  .settings-row label { color: var(--text-sec); }
+  .settings-row input {
+    flex: 1;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text);
+    font-size: 12px;
+  }
+
+  .settings-row select {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text);
+    font-size: 12px;
+  }
+
+  #save-key-btn, #save-asr-btn {
+    padding: 6px 12px;
+    background: var(--btn-sec);
+    color: var(--text);
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  #privacy-note {
+    padding: 12px;
+    font-size: 11px;
+    color: var(--text-mute);
+    line-height: 1.5;
+  }
+  #privacy-note strong { color: var(--text-sec); display: block; margin-bottom: 4px; }
+
+/* Lucide Icons */
+i[data-lucide] { display:inline-block; width:0.8em; height:0.8em; vertical-align:-.1em; stroke:currentColor; stroke-width:1.5; fill:none; pointer-events:none; color:var(--text-sec); }
+.demo-badge-hidden { display: none !important; }
+
+</style>
+</head>
+<body>
+
+<div id="tab-bar">
+  <div class="main-tabs" role="tablist" aria-label="侧边栏主导航">
+    <button class="tab-btn active" data-tab="workbench"><i data-lucide="layout-dashboard" style="width:12px;height:12px;vertical-align:middle;margin-right:2px"></i> 工作台</button>
+    <button class="tab-btn" data-tab="notes"><i data-lucide="folder-open" style="width:12px;height:12px;vertical-align:middle;margin-right:2px"></i> 资料</button>
+    <button class="tab-btn" data-tab="review"><i data-lucide="repeat-2" style="width:12px;height:12px;vertical-align:middle;margin-right:2px"></i> 复习</button>
+    <button class="tab-btn" data-tab="chat"><i data-lucide="message-square-text" style="width:12px;height:12px;vertical-align:middle;margin-right:2px"></i> 问智引</button>
+  </div>
+  <button class="utility-tab-btn" id="settings-entry-btn" title="设置" aria-label="设置"><i data-lucide="settings" style="width:13px;height:13px;display:block"></i></button>
+</div>
+<div id="sidepanel-toast" style="display:none"></div>
+
+<!-- ── 工作台 Tab ── -->
+<div id="tab-workbench" class="tab-content active">
+  <div class="panel-scroll">
+    <section class="workbench-hero">
+      <div>
+        <div class="panel-kicker">资料分组</div>
+        <h1 id="workbench-site-title">学习资料夹</h1>
+        <p id="workbench-site-desc">按站点、仓库和主题自动归档，默认收起便于快速扫视。</p>
+      </div>
+      <div class="hero-action-row">
+        <button class="icon-btn" id="workbench-folder-toggle-btn" title="展开或收起全部资料分组"><i data-lucide="chevrons-down-up"></i></button>
+      </div>
+    </section>
+    <section class="panel-section compact-folder-section">
+      <div id="workbench-folder-list" class="folder-list compact"></div>
+    </section>
+    <section class="panel-section">
+      <div class="panel-section-title">
+        <span><i data-lucide="workflow"></i> 学习任务进度</span>
+        <span id="workbench-flow-status" class="state-pill">待同步</span>
+      </div>
+      <div id="workbench-flow-list" class="flow-list"></div>
+    </section>
+  </div>
+</div>
+
+<!-- ── 对话 Tab（问智引） ── -->
+<div id="tab-chat" class="tab-content">
+  <div id="chat-toast" style="display:none"></div>
+  <div id="chat-header">
+    <button id="chat-history-btn" title="对话历史"><i data-lucide="history" style="width:13px;height:13px;display:block"></i></button>
+    <button id="chat-show-widget-btn" title="显示数字人"><i data-lucide="bot" style="width:13px;height:13px;display:block"></i></button>
+    <span id="chat-conv-title">新对话</span>
+    <button id="chat-new-btn" title="新对话"><i data-lucide="square-pen" style="width:13px;height:13px;display:block"></i></button>
+    <button id="chat-mute-btn" title="语音播报开关"><i data-lucide="volume-2" style="width:11px;height:11px;display:block"></i></button>
+  </div>
+  <div id="chat-messages"></div>
+  <section id="chat-context-card" class="chat-context-card">
+    <div>
+      <span id="chat-context-label">正在基于：当前页面</span>
+      <small id="chat-context-detail">优先读取当前网页标题、DOM、视口和 URL。</small>
+    </div>
+    <select id="chat-context-scope" title="问答范围" aria-label="问答范围">
+      <option value="current-page">当前页面</option>
+      <option value="current-group">当前资料组</option>
+      <option value="custom-sources">自选资料</option>
+      <option value="all-sources">全部资料</option>
+    </select>
+    <button id="chat-custom-manage-btn" class="context-manage-btn" style="display:none">管理资料</button>
+  </section>
+  <section id="chat-custom-panel" class="chat-custom-panel" style="display:none">
+    <div class="chat-custom-head">
+      <strong>选择自选资料</strong>
+      <button id="chat-custom-close-btn" title="收起"><i data-lucide="x"></i></button>
+    </div>
+    <div id="chat-custom-list" class="chat-custom-list"></div>
+    <div class="chat-custom-actions">
+      <span id="chat-custom-count">已选择 0 条资料</span>
+      <button id="chat-custom-confirm-btn">确认使用</button>
+    </div>
+  </section>
+  <section id="chat-recent-panel" class="collapsed" aria-label="最近对话">
+    <div class="chat-recent-title">
+      <span><i data-lucide="clock" style="width:11px;height:11px;vertical-align:middle;margin-right:4px"></i> 最近对话</span>
+      <div class="chat-recent-actions">
+        <button id="chat-recent-toggle-btn" title="展开最近对话">展开</button>
+      </div>
+    </div>
+    <div id="history-search">
+      <div style="display:flex;align-items:center;gap:4px"><div style="position:relative;flex:1"><i data-lucide="search" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:11px;height:11px;color:var(--text-mute);pointer-events:none"></i><input id="history-search-input" type="text" placeholder="搜索最近对话..." style="padding-left:28px;width:100%;box-sizing:border-box"></div></div>
+    </div>
+    <div id="history-list"></div>
+    <button id="history-clear-btn"><i data-lucide="trash-2" style="width:11px;height:11px;vertical-align:middle;margin-right:4px"></i> 清空所有对话</button>
+  </section>
+  <div id="chat-input-area">
+    <button id="chat-more-btn" title="更多能力"><i data-lucide="plus" style="width:16px;height:16px;display:block"></i></button>
+    <div id="chat-more-menu" class="chat-more-menu">
+      <button id="chat-upload-file-btn"><i data-lucide="file-up"></i> 输入文件</button>
+      <button id="chat-web-search-btn"><i data-lucide="globe"></i> 联网搜索</button>
+      <button id="chat-recommend-platform-btn"><i data-lucide="sparkles"></i> 推荐平台</button>
+      <button id="chat-add-manual-btn"><i data-lucide="keyboard"></i> 自定义内容</button>
+      <button id="chat-export-btn"><i data-lucide="clipboard-list"></i> 导出对话</button>
+    </div>
+    <input id="chat-file-input" type="file" accept=".txt,.md,.csv,.tsv,.json,.html,.htm,.pdf,.doc,.docx,.ppt,.pptx,text/*,application/pdf,application/json" style="display:none">
+    <button id="chat-mic-btn"><i data-lucide="mic" style="width:16px;height:16px;display:block"></i></button>
+    <textarea id="chat-text-input" rows="1" placeholder="输入问题或上传资料..."></textarea>
+    <button id="chat-send-btn"><i data-lucide="send" style="width:16px;height:16px;display:block"></i></button>
+    <button id="chat-stop-btn" title="停止生成" style="display:none"><i data-lucide="square" style="width:16px;height:16px;display:block"></i></button>
+  </div>
+</div>
+
+<!-- ── 导航能力：已合并到工作台快捷动作；保留隐藏原 UI/ID 供语音和状态绑定使用 ── -->
+<div id="tab-nav" class="tab-content legacy-hidden-panel" aria-hidden="true">
+  <div id="avatar-container" class="idle">
+    <div id="avatar-glow"></div>
+    <!--
+      SVG: 智引数字人
+      规范源: ../assets/avatar-base.svg
+      修改角色外观时：先改 avatar-base.svg，再将 zy- → sp- 替换后同步到这里。
+    -->
+    <svg id="avatar-svg" viewBox="0 0 100 116" overflow="visible" xmlns="http://www.w3.org/2000/svg"
+         style="width:70%;max-width:200px;filter:drop-shadow(0 0 14px rgba(255,160,190,0.45));animation:sp-float 3.5s ease-in-out infinite">
+      <style>
+        @keyframes sp-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+        @keyframes sp-halo  { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        #sp-halo { transform-box:fill-box; transform-origin:center; animation:sp-halo 10s linear infinite; }
+      </style>
+      <defs>
+        <radialGradient id="sp-head-g" cx="38%" cy="32%" r="65%">
+          <stop offset="0%"   stop-color="#fffef8"/>
+          <stop offset="55%"  stop-color="#f8ece0"/>
+          <stop offset="100%" stop-color="#e8d0bc"/>
+        </radialGradient>
+        <radialGradient id="sp-body-g" cx="40%" cy="30%" r="65%">
+          <stop offset="0%"   stop-color="#fff4f0"/>
+          <stop offset="55%"  stop-color="#f5dcd8"/>
+          <stop offset="100%" stop-color="#e0b8b4"/>
+        </radialGradient>
+        <radialGradient id="sp-eye-g" cx="30%" cy="28%" r="66%">
+          <stop offset="0%"   stop-color="#c8f0ff"/>
+          <stop offset="50%"  stop-color="#3098d8"/>
+          <stop offset="100%" stop-color="#0860a8"/>
+        </radialGradient>
+        <radialGradient id="sp-foot-g" cx="40%" cy="35%" r="65%">
+          <stop offset="0%"   stop-color="#ffd0dc"/>
+          <stop offset="100%" stop-color="#f0a0b8"/>
+        </radialGradient>
+      </defs>
+      <ellipse cx="50" cy="32" rx="40" ry="40" fill="rgba(255,180,200,0.07)"/>
+      <g id="sp-halo">
+        <circle cx="50" cy="32" r="36" fill="none"
+                stroke="#ffb0c8" stroke-width="1.8"
+                stroke-dasharray="11 5" stroke-linecap="round" opacity="0.80"/>
+      </g>
+      <circle cx="50" cy="32" r="30" fill="url(#sp-head-g)"/>
+      <ellipse cx="41" cy="18" rx="10" ry="6" fill="rgba(255,255,255,0.50)" transform="rotate(-12,41,18)"/>
+      <ellipse cx="50" cy="34" rx="21" ry="19" fill="#fff8f0"/>
+      <ellipse cx="42" cy="31" rx="6.5" ry="7"   fill="url(#sp-eye-g)"/>
+      <circle  cx="39"   cy="28"   r="3.8" fill="rgba(255,255,255,0.92)"/>
+      <circle  cx="45.5" cy="34.5" r="1.6" fill="rgba(255,255,255,0.38)"/>
+      <ellipse cx="58" cy="31" rx="6.5" ry="7"   fill="url(#sp-eye-g)"/>
+      <circle  cx="55"   cy="28"   r="3.8" fill="rgba(255,255,255,0.92)"/>
+      <circle  cx="61.5" cy="34.5" r="1.6" fill="rgba(255,255,255,0.38)"/>
+      <ellipse cx="32" cy="37" rx="7" ry="4.5" fill="#ffb8c8" opacity="0.75"/>
+      <ellipse cx="68" cy="37" rx="7" ry="4.5" fill="#ffb8c8" opacity="0.75"/>
+      <path d="M 44,44 Q 50,49 56,44" fill="none" stroke="#d08878" stroke-width="1.7" stroke-linecap="round"/>
+      <path d="M 39,62 C 28,64 14,70 14,82 C 14,95 26,104 50,104
+               C 74,104 86,95 86,82 C 86,70 72,64 61,62 Z"
+            fill="url(#sp-body-g)"/>
+      <ellipse cx="44" cy="80" rx="11" ry="13" fill="rgba(255,255,255,0.30)"/>
+      <ellipse cx="9"  cy="76" rx="13" ry="8" fill="url(#sp-body-g)" transform="rotate(-22,9,76)"/>
+      <ellipse cx="91" cy="76" rx="13" ry="8" fill="url(#sp-body-g)" transform="rotate(22,91,76)"/>
+      <ellipse cx="37" cy="110" rx="13" ry="8" fill="url(#sp-foot-g)"/>
+      <ellipse cx="63" cy="110" rx="13" ry="8" fill="url(#sp-foot-g)"/>
+      <ellipse cx="34" cy="107" rx="5"  ry="3" fill="rgba(255,255,255,0.40)"/>
+      <ellipse cx="60" cy="107" rx="5"  ry="3" fill="rgba(255,255,255,0.40)"/>
+    </svg>
+  </div>
+
+  <div id="status-bar">
+    <div id="status-dot" class="idle"></div>
+    <span id="status-text">准备就绪 — 点击麦克风开始</span>
+    <span id="demo-badge" class="demo-badge-hidden" style="font-size:10px;background:#f59e0b;color:#fff;padding:2px 6px;border-radius:8px;margin-left:6px;font-weight:600;align-items:center;gap:3px"><i data-lucide="monitor-play" style="width:9px;height:9px"></i> 演示</span>
+  </div>
+
+  <div id="quick-actions">
+    <button class="quick-action" data-query="总结这个页面的主要内容"><i data-lucide="clipboard-list" style="width:11px;height:11px;vertical-align:middle;margin-right:3px"></i> 总结</button>
+    <button class="quick-action" data-query="这个页面上有哪些主要功能和入口"><i data-lucide="search" style="width:11px;height:11px;vertical-align:middle;margin-right:3px"></i> 找入口</button>
+    <button class="quick-action" data-query="我想学习这门内容，帮我规划学习路径并推荐资源"><i data-lucide="route" style="width:11px;height:11px;vertical-align:middle;margin-right:3px"></i> 学习规划</button>
+    <button class="quick-action" id="nav-collect-btn"><i data-lucide="archive" style="width:11px;height:11px;vertical-align:middle;margin-right:3px"></i> 采集当前页面</button>
+    <button class="quick-action tool-action" data-tool="show-widget"><i data-lucide="bot" style="width:11px;height:11px;vertical-align:middle;margin-right:3px"></i> 显示数字人</button>
+    <button class="quick-action tool-action" data-tool="clear-highlight"><i data-lucide="eraser" style="width:11px;height:11px;vertical-align:middle;margin-right:3px"></i> 清除高亮</button>
+  </div>
+
+  <div id="controls">
+    <button id="mic-btn"><i data-lucide="mic" style="width:12px;height:12px;vertical-align:middle;margin-right:4px"></i> 开始说话</button>
+    <input id="text-input" type="text" placeholder="或输入文字...">
+  </div>
+</div>
+
+<!-- ── 资料 Tab（由原笔记页演化，保留原 notes-* ID 和功能） ── -->
+<div id="tab-notes" class="tab-content">
+  <div class="panel-scroll">
+    <section class="workbench-hero notes-site-card">
+      <div>
+        <div class="panel-kicker">当前站点</div>
+        <h1 id="notes-site-title">正在识别...</h1>
+        <p id="notes-site-desc">稍后会显示站点画像和可用学习入口。</p>
+      </div>
+      <button class="icon-btn" id="notes-site-refresh-btn" title="刷新当前站点"><i data-lucide="refresh-cw"></i></button>
+    </section>
+    <section class="panel-section notes-capture">
+      <div class="panel-section-title">
+        <span><i data-lucide="file-plus-2"></i> 采集资料</span>
+        <span id="notes-status" class="state-pill">准备就绪</span>
+      </div>
+      <div class="notes-button-row">
+        <button class="primary-action" id="notes-collect-btn"><i data-lucide="archive"></i> 采集当前页面</button>
+        <button class="secondary-action" id="notes-compose-btn"><i data-lucide="wand-sparkles"></i> 生成资料笔记</button>
+        <div class="download-menu-wrap">
+          <button class="secondary-action download-trigger" id="notes-download-btn"><i data-lucide="download"></i> 下载 <i data-lucide="chevron-right"></i></button>
+          <div class="download-menu" id="notes-download-menu">
+            <button id="notes-export-btn"><i data-lucide="file-text"></i> Markdown</button>
+            <button id="notes-export-pdf-btn"><i data-lucide="file-down"></i> PDF 报告</button>
+            <button id="notes-export-word-btn"><i data-lucide="file-type"></i> Word 文档</button>
+            <button id="notes-export-pptx-btn"><i data-lucide="presentation"></i> 汇报幻灯片</button>
+            <button id="notes-export-anki-btn"><i data-lucide="copy-check"></i> 复习闪卡</button>
+          </div>
+        </div>
+        <button class="danger-action" id="notes-clear-btn"><i data-lucide="trash-2"></i> 清空资料夹</button>
+      </div>
+    </section>
+
+    <section class="panel-section note-preview-section">
+      <div class="panel-section-title"><span><i data-lucide="file-text"></i> 预览区</span></div>
+      <pre id="notes-preview">采集页面后，可在这里生成和预览资料笔记。</pre>
+    </section>
+  </div>
+</div>
+
+<!-- ── 复习 Tab ── -->
+<div id="tab-review" class="tab-content">
+  <div class="panel-scroll">
+    <section class="review-hero">
+      <div>
+        <div class="panel-kicker">复习计划</div>
+        <h1>复习智能体</h1>
+        <p>把资料自动变成自测题和错题回看，形成“采集 - 笔记 - 自测 - 掌握”的学习闭环。</p>
+      </div>
+      <i data-lucide="brain-circuit"></i>
+    </section>
+    <section class="panel-section">
+      <div class="panel-section-title"><span><i data-lucide="list-checks"></i> 今日复习</span><span id="review-status" class="state-pill">待生成</span></div>
+      <div class="notes-button-row">
+        <button class="primary-action" id="review-generate-btn"><i data-lucide="brain-circuit"></i> 生成自测题</button>
+      </div>
+      <div class="review-placeholder-list">
+        <button class="review-placeholder-item active" data-review-filter="all"><span>自测题</span><em id="review-selftest-count">0 题</em></button>
+        <button class="review-placeholder-item" data-review-filter="wrong"><span>错题回看</span><em id="review-wrong-count">0 条</em></button>
+      </div>
+    </section>
+    <section class="panel-section">
+      <div class="panel-section-title"><span><i data-lucide="calendar-clock"></i> 复习内容</span></div>
+      <div id="review-cards" class="review-card-list">
+        <div class="empty-panel">先采集资料或生成笔记，再点击“生成自测题”。</div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ── 设置面板：通过右上角齿轮打开，保留原设置内容和 ID ── -->
+<div id="tab-settings" class="tab-content">
+  <div class="panel-scroll settings-panel">
+    <section class="panel-section">
+      <div class="panel-section-title">
+        <span><i data-lucide="key-round"></i> 模型配置</span>
+        <button class="icon-btn" id="settings-back-btn" title="返回工作台" aria-label="返回工作台"><i data-lucide="x"></i></button>
+      </div>
+
+  <div class="settings-row">
+    <label>LLM Key:</label>
+    <input id="api-key-input" type="password" placeholder="DeepSeek API Key">
+    <button id="save-key-btn">保存</button>
+    <label>模型:</label>
+    <select id="model-select">
+      <option value="chat">DeepSeek Chat</option>
+      <option value="v4flash">DeepSeek V4 Flash</option>
+    </select>
+  </div>
+
+  <div class="settings-row">
+    <label>ASR Key:</label>
+    <input id="asr-key-input" type="password" placeholder="Whisper API Key (SiliconFlow等)">
+    <button id="save-asr-btn">保存</button>
+    <label>模型:</label>
+    <select id="asr-model-select">
+      <option value="FunAudioLLM/SenseVoiceSmall" selected>FunAudioLLM/SenseVoiceSmall (快速·推荐)</option>
+      <option value="FunAudioLLM/SenseVoice">FunAudioLLM/SenseVoice (高准确率)</option>
+      <option value="TeleSpeech/TeleSpeechASR">TeleSpeech/TeleSpeechASR</option>
+      <option value="TeleAI/TeleSpeech">TeleAI/TeleSpeech (旧版)</option>
+    </select>
+    <label>端点:</label>
+    <input id="asr-endpoint-input" type="text" placeholder="默认: api.siliconflow.cn" style="flex:2">
+  </div>
+
+  <div id="privacy-note">
+    <strong>隐私说明</strong>
+    页面内容和语音会上传至 AI 服务（DeepSeek / SiliconFlow）进行处理，不会在服务器端存储。API Key 仅保存在浏览器本地。
+  </div>
+
+  <div id="demo-mode-bar" style="padding:4px 10px;border-top:0.5px solid var(--border);display:flex;align-items:center;gap:6px;font-size:12px;">
+    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;flex:1">
+      <input type="checkbox" id="demo-mode-toggle"> <i data-lucide="monitor-play" style="width:11px;height:11px;vertical-align:middle;margin-right:2px"></i> 演示模式（离线，无需 API Key）
+    </label>
+    <button id="show-guide-btn" style="background:none;border:none;color:var(--text-sec);cursor:pointer;font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid var(--border);display:inline-flex;align-items:center;gap:3px"><i data-lucide="settings" style="width:10px;height:10px"></i> 引导设置</button>
+  </div>
+    </section>
+
+    <section class="panel-section about-panel">
+      <div class="panel-section-title"><span><i data-lucide="info"></i> 关于智引</span></div>
+      <p>面向高校教育场景的 AI 导航助手。通过语音或文字输入，在教学平台上快速定位功能、理解课程内容、完成学习任务。</p>
+      <p>v2.1.0 · 第三届“教育数字人大赛”参展作品</p>
+    </section>
+  </div>
+</div>
+
+<!-- ── 首次使用引导遮罩 ── -->
+<div id="onboarding-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:16px">
+  <div id="onboarding-dialog" style="background:var(--bg-base);border-radius:10px;padding:24px;max-width:340px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,0.25);position:relative;animation:fadeIn 0.3s ease">
+    <style>
+      @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+      .onb-step { display:none }
+      .onb-step.active { display:block }
+      .onb-title { font-size:16px;font-weight:700;margin-bottom:12px }
+      .onb-desc { font-size:13px;color:var(--text-sec);margin-bottom:16px;line-height:1.6 }
+      .onb-input { width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-input);color:var(--text);font-size:13px;margin-bottom:8px;box-sizing:border-box }
+      .onb-input:focus { outline:none;border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,0.2) }
+      .onb-btn { padding:10px 20px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer }
+      .onb-btn-primary { background:#3b82f6;color:#fff }
+      .onb-btn-primary:hover { background:#2563eb }
+      .onb-btn-secondary { background:var(--btn-sec);color:var(--text) }
+      .onb-btn-secondary:hover { opacity:0.8 }
+      .onb-btn-row { display:flex;gap:8px;margin-top:16px }
+      .onb-btn-row .onb-btn { flex:1 }
+      .onb-skip { position:absolute;top:12px;right:14px;background:none;border:none;color:var(--text-mute);font-size:18px;cursor:pointer;padding:4px;line-height:1 }
+      .onb-skip:hover { color:var(--text) }
+      .onb-success { text-align:center;padding:20px 0 }
+      .onb-success-icon { font-size:48px;margin-bottom:12px }
+      .onb-tag { display:inline-block;font-size:11px;background:#e2e8f0;color:#475569;padding:2px 8px;border-radius:4px;margin:2px }
+      .onb-or { text-align:center;margin:12px 0;color:var(--text-mute);font-size:12px;position:relative }
+      .onb-or::before,.onb-or::after { content:'';position:absolute;top:50%;width:40%;height:1px;background:var(--border) }
+      .onb-or::before { left:0 } .onb-or::after { right:0 }
+    </style>
+    <button class="onb-skip" id="onb-close">✕</button>
+
+    <!-- Step 0: 欢迎 -->
+    <div class="onb-step active" data-step="0">
+      <div class="onb-title">👋 欢迎使用智引 AI 导航导师</div>
+      <div class="onb-desc">
+        我是你的 AI 助教助手，能帮助你在教学平台上通过语音或文字快速定位功能、理解课程内容、完成学习任务。
+      </div>
+      <div style="background:var(--bg-panel);border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--text-sec);line-height:1.6">
+        <strong>✨ 我能做什么</strong><br>
+        🎤 语音导航 · 🔍 智能定位 · 📋 多步任务 · 🌐 教育场景适配
+      </div>
+      <div class="onb-btn-row">
+        <button class="onb-btn onb-btn-secondary" id="onb-skip-all">跳过引导</button>
+        <button class="onb-btn onb-btn-primary" id="onb-next">开始设置 →</button>
+      </div>
+    </div>
+
+    <!-- Step 1: LLM Key -->
+    <div class="onb-step" data-step="1">
+      <div style="font-size:12px;color:var(--text-mute);margin-bottom:4px">第 1 步 / 共 4 步</div>
+      <div class="onb-title">🔑 配置 AI 模型</div>
+      <div class="onb-desc">输入 DeepSeek API Key，让导航导师理解你的需求和页面内容。</div>
+      <input class="onb-input" id="onb-llm-key" type="password" placeholder="sk-xxx...xxxx">
+      <p style="font-size:11px;color:var(--text-mute);margin-top:4px">
+        还没有 Key？去 <a href="https://platform.deepseek.com/api_keys" target="_blank" style="color:#3b82f6">platform.deepseek.com</a> 注册获取
+      </p>
+      <div class="onb-btn-row">
+        <button class="onb-btn onb-btn-secondary" id="onb-prev-1">← 上一步</button>
+        <button class="onb-btn onb-btn-primary" id="onb-next-1">下一步</button>
+      </div>
+    </div>
+
+    <!-- Step 2: ASR Key -->
+    <div class="onb-step" data-step="2">
+      <div style="font-size:12px;color:var(--text-mute);margin-bottom:4px">第 2 步 / 共 4 步</div>
+      <div class="onb-title">🎤 配置语音服务</div>
+      <div class="onb-desc">输入 SiliconFlow API Key，实现语音识别和语音合成。</div>
+      <input class="onb-input" id="onb-asr-key" type="password" placeholder="SiliconFlow API Key (sk-...)">
+      <input class="onb-input" id="onb-asr-endpoint" type="text" placeholder="API 端点 (默认: api.siliconflow.cn)">
+      <p style="font-size:11px;color:var(--text-mute);margin-top:4px">
+        还没有 Key？去 <a href="https://siliconflow.cn" target="_blank" style="color:#3b82f6">siliconflow.cn</a> 注册获取
+      </p>
+      <div class="onb-btn-row">
+        <button class="onb-btn onb-btn-secondary" id="onb-prev-2">← 上一步</button>
+        <button class="onb-btn onb-btn-primary" id="onb-next-2">下一步</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Demo Mode 替代方案 -->
+    <div class="onb-step" data-step="3">
+      <div style="font-size:12px;color:var(--text-mute);margin-bottom:4px">第 3 步 / 共 4 步</div>
+      <div class="onb-title">🎪 或者试试演示模式</div>
+      <div class="onb-desc">
+        如果没有 API Key 也不用担心，可以使用<strong>演示模式</strong>离线体验核心功能。
+      </div>
+      <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:8px;padding:14px;margin-bottom:12px;font-size:12px;color:#92400e;line-height:1.6">
+        🎪 <strong>演示模式</strong><br>
+        · 6 个预设场景：查成绩、提交作业、看课表、选课等<br>
+        · 关键字匹配自动触发<br>
+        · TTS 语音播报完整流程<br>
+        · 无需 API Key，纯离线运行
+      </div>
+      <div class="onb-btn-row">
+        <button class="onb-btn onb-btn-secondary" id="onb-prev-3">← 上一步</button>
+        <button class="onb-btn onb-btn-secondary" id="onb-use-demo">🎪 使用演示模式 →</button>
+        <button class="onb-btn onb-btn-primary" id="onb-next-3">继续配置 →</button>
+      </div>
+    </div>
+
+    <!-- Step 4: 完成 -->
+    <div class="onb-step" data-step="4">
+      <div class="onb-success">
+        <div class="onb-success-icon">🎉</div>
+        <div class="onb-title" style="margin-bottom:8px">准备就绪！</div>
+        <div class="onb-desc" style="text-align:center" id="onb-done-msg">
+          你已经完成了基础配置，现在可以开始使用了！
+        </div>
+        <div style="margin:12px 0;font-size:12px;color:var(--text-sec)" id="onb-summary"></div>
+      </div>
+      <div class="onb-btn-row">
+        <button class="onb-btn onb-btn-primary" id="onb-finish" style="flex:1">🚀 开始使用</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 历史 Tab 容器保留，入口已合并到问智引最近对话 ── -->
+<div id="tab-history" class="tab-content legacy-hidden-panel" aria-hidden="true"></div>
+
+<script src="../lib/lucide.min.js"></script>
+<script src="../lib/pdf.min.js"></script>
+<script src="../lib/mammoth.browser.min.js"></script>
+<script src="../lib/jszip.min.js"></script>
+<script type="module" src="chat-store.js"></script>
+<script type="module" src="chat-view.js"></script>
+<script type="module" src="sidepanel.js"></script>
+</body>
+</html>

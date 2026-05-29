@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120">
+  <!--
+    智引 AI 导航导师 — 数字人基础 SVG
+    ====================================
+    这是规范源文件。content/widget-content.js 和 sidepanel 的 SVG 从此派生。
+    修改角色外观时：先改此文件，再同步到各引用处（替换 zy- → xb- 或 sp- 前缀）。
+  -->
+  <defs>
+    <radialGradient id="zy-head-g" cx="38%" cy="32%" r="65%">
+      <stop offset="0%"   stop-color="#fffef8"/>
+      <stop offset="55%"  stop-color="#f8ece0"/>
+      <stop offset="100%" stop-color="#e8d0bc"/>
+    </radialGradient>
+    <radialGradient id="zy-body-g" cx="40%" cy="30%" r="65%">
+      <stop offset="0%"   stop-color="#fff4f0"/>
+      <stop offset="55%"  stop-color="#f5dcd8"/>
+      <stop offset="100%" stop-color="#e0b8b4"/>
+    </radialGradient>
+    <radialGradient id="zy-eye-g" cx="30%" cy="28%" r="66%">
+      <stop offset="0%"   stop-color="#c8f0ff"/>
+      <stop offset="50%"  stop-color="#3098d8"/>
+      <stop offset="100%" stop-color="#0860a8"/>
+    </radialGradient>
+    <radialGradient id="zy-foot-g" cx="40%" cy="35%" r="65%">
+      <stop offset="0%"   stop-color="#ffd0dc"/>
+      <stop offset="100%" stop-color="#f0a0b8"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 背景光晕 -->
+  <ellipse cx="50" cy="32" rx="40" ry="40" fill="rgba(255,180,200,0.07)"/>
+
+  <!-- 轨道光环 -->
+  <g id="zy-halo">
+    <circle cx="50" cy="32" r="36" fill="none"
+            stroke="#ffb0c8" stroke-width="1.8"
+            stroke-dasharray="11 5" stroke-linecap="round" opacity="0.80"/>
+  </g>
+
+  <!-- 头部 -->
+  <circle cx="50" cy="32" r="30" fill="url(#zy-head-g)"/>
+  <ellipse cx="41" cy="18" rx="10" ry="6"
+           fill="rgba(255,255,255,0.50)" transform="rotate(-12,41,18)"/>
+
+  <!-- 脸部 -->
+  <ellipse cx="50" cy="34" rx="21" ry="19" fill="#fff8f0"/>
+
+  <!-- 左眼 -->
+  <g id="zy-eye-l">
+    <ellipse cx="42" cy="31" rx="6.5" ry="7"   fill="url(#zy-eye-g)"/>
+    <circle  cx="39"   cy="28"   r="3.8" fill="rgba(255,255,255,0.92)"/>
+    <circle  cx="45.5" cy="34.5" r="1.6" fill="rgba(255,255,255,0.38)"/>
+  </g>
+
+  <!-- 右眼 -->
+  <g id="zy-eye-r">
+    <ellipse cx="58" cy="31" rx="6.5" ry="7"   fill="url(#zy-eye-g)"/>
+    <circle  cx="55"   cy="28"   r="3.8" fill="rgba(255,255,255,0.92)"/>
+    <circle  cx="61.5" cy="34.5" r="1.6" fill="rgba(255,255,255,0.38)"/>
+  </g>
+
+  <!-- 腮红 -->
+  <ellipse id="zy-cheek-l" cx="32" cy="37" rx="7" ry="4.5" fill="#ffb8c8" opacity="0.75"/>
+  <ellipse id="zy-cheek-r" cx="68" cy="37" rx="7" ry="4.5" fill="#ffb8c8" opacity="0.75"/>
+
+  <!-- 嘴（闭合） -->
+  <path id="zy-mouth-normal" d="M 44,44 Q 50,49 56,44"
+        fill="none" stroke="#d08878" stroke-width="1.7" stroke-linecap="round"/>
+
+  <!-- 嘴（张开，用于 speaking 状态） -->
+  <g id="zy-mouth-open" opacity="0">
+    <path d="M 44,44 Q 50,50 56,44" fill="#d08070"/>
+    <ellipse cx="50" cy="47" rx="5" ry="2.8" fill="#b85050"/>
+  </g>
+
+  <!-- 身体 -->
+  <path d="M 39,62 C 28,64 14,70 14,82
+           C 14,95 26,104 50,104
+           C 74,104 86,95 86,82
+           C 86,70 72,64 61,62 Z"
+        fill="url(#zy-body-g)"/>
+  <ellipse cx="44" cy="80" rx="11" ry="13" fill="rgba(255,255,255,0.30)"/>
+
+  <!-- 手臂 -->
+  <ellipse cx="9"  cy="76" rx="13" ry="8" fill="url(#zy-body-g)" transform="rotate(-22,9,76)"/>
+  <ellipse cx="91" cy="76" rx="13" ry="8" fill="url(#zy-body-g)" transform="rotate(22,91,76)"/>
+
+  <!-- 脚 -->
+  <ellipse cx="37" cy="110" rx="13" ry="8" fill="url(#zy-foot-g)"/>
+  <ellipse cx="63" cy="110" rx="13" ry="8" fill="url(#zy-foot-g)"/>
+  <ellipse cx="34" cy="107" rx="5"  ry="3" fill="rgba(255,255,255,0.40)"/>
+  <ellipse cx="60" cy="107" rx="5"  ry="3" fill="rgba(255,255,255,0.40)"/>
+</svg>

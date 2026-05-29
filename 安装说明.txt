@@ -1,0 +1,11 @@
+智引 AI 导航导师 - Chrome 扩展安装说明
+
+1. 解压本压缩包。
+2. 打开 Chrome 浏览器，进入 chrome://extensions/
+3. 右上角打开“开发者模式”。
+4. 点击“加载已解压的扩展程序”。
+5. 选择解压后的 ZhiyinAI_Navigator_Install 文件夹。
+6. 安装后点击浏览器右上角扩展图标，打开“智引 AI 导航导师”。
+7. 首次使用请在设置中填写所需 API Key；如只演示基础页面采集/资料管理，可先不配置模型。
+
+注意：不要删除 manifest.json、background、content、lib、offscreen、sidepanel、assets 等目录。
