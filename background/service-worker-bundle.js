@@ -844,7 +844,7 @@ function buildLearningPlan(intent, siteProfile) {
     '- 第 4 步：' + subject.path[3],
     '',
     '### 推荐平台',
-    ...platforms.slice(0, 4).map(p => `- **${p.name}**：${p.bestFor}`),
+    ...platforms.slice(0, 4).map(p => `- **${p.name}**：${p.bestFor}\n  网址：${p.url}`),
     '',
     '你可以先选一个平台，我再帮你打开搜索入口或在当前页面标出下一步。'
   ];
@@ -1825,11 +1825,12 @@ function buildLearningPath(theme, keywords) {
 
 function buildPlatformSuggestions(theme, keywords) {
   const query = keywords.slice(0, 3).join(' ') || theme;
+  const encodedQuery = encodeURIComponent(query);
   return [
-    '- **中国大学 MOOC**：查找系统课程，适合补基础与拿证书；搜索词：`' + query + '`',
-    '- **B 站**：查找案例讲解和操作演示，适合快速建立直观理解。',
-    '- **GitHub**：查找开源项目、README 和样例代码，适合 IT/AI 方向实践。',
-    '- **IEEE Xplore**：查找英文论文和技术文献，适合科研拓展和高阶阅读。'
+    '- **中国大学 MOOC**：查找系统课程，适合补基础与拿证书；网址：https://www.icourse163.org/search.htm?search=' + encodedQuery,
+    '- **B 站**：查找案例讲解和操作演示，适合快速建立直观理解；网址：https://search.bilibili.com/all?keyword=' + encodedQuery,
+    '- **GitHub**：查找开源项目、README 和样例代码，适合 IT/AI 方向实践；网址：https://github.com/search?q=' + encodedQuery,
+    '- **IEEE Xplore**：查找英文论文和技术文献，适合科研拓展和高阶阅读；网址：https://ieeexplore.ieee.org/search/searchresult.jsp?queryText=' + encodedQuery
   ];
 }
 

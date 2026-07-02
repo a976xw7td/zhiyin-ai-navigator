@@ -531,6 +531,40 @@ function sourceTitleById(id) {
   return source?.title || source?.fileName || source?.url || '已选资料';
 }
 
+function sourceById(id) {
+  return (currentNoteSources || []).find(function(item) {
+    return (item.id || item.sourceId) === id;
+  }) || null;
+}
+
+function buildRecommendTopicFromSources() {
+  var typed = (chatTextInput?.value || '').trim();
+  if (typed) return typed;
+  var ids = activeTaskSourceIds();
+  var candidates = ids.map(sourceById).filter(Boolean);
+  if (!candidates.length && customSourceSelection.size) {
+    candidates = Array.from(customSourceSelection).map(sourceById).filter(Boolean);
+  }
+  if (!candidates.length) {
+    candidates = (currentNoteSources || []).filter(function(item) { return item.type === 'file'; }).slice(0, 1);
+  }
+  if (!candidates.length && currentNoteSources.length) {
+    candidates = [currentNoteSources[0]];
+  }
+  var source = candidates[0] || {};
+  var title = cleanTopicText(source.title || source.fileName || source.name || source.url || '');
+  var excerpt = cleanTopicText(source.description || source.excerpt || source.text || '');
+  var keywords = (excerpt.match(/[\u4e00-\u9fa5A-Za-z0-9][\u4e00-\u9fa5A-Za-z0-9+#._-]{1,20}/g) || [])
+    .filter(function(word, index, arr) {
+      var key = word.toLowerCase();
+      return word.length > 1 && arr.findIndex(function(item) { return item.toLowerCase() === key; }) === index;
+    })
+    .slice(0, 3)
+    .join(' ');
+  var topic = [title, keywords].filter(Boolean).join(' ').trim();
+  return topic ? (topic + ' 相关学习资源 平台') : '';
+}
+
 function activeTaskSourceIds() {
   var scope = chatContextScope?.value || 'current-page';
   if (scope === 'current-page') return [];
@@ -1036,7 +1070,7 @@ async function runWebSearch(query) {
   }).join('\n\n') || '未找到足够可靠的推荐结果。';
   var searchContext = { scope: 'custom-sources', sourceIds: ids, customSourceIds: ids, searchResults: searchResults };
   ChatView.addUserMessage('联网搜索：' + q, { context: searchContext });
-  ChatView.finishStreaming('已完成联网搜索，并推荐以下 1-3 个相关网站：\n\n' + summary + '\n\n这些结果已加入资料库，可继续导航、采集、生成笔记或自测复习。', {
+  ChatView.finishStreaming('已完成联网搜索，并推荐以下 1-3 个相关网站（含网址）：\n\n' + summary + '\n\n这些结果已加入资料库，可继续导航、采集、生成笔记或自测复习。', {
     action: 'describe',
     actionSuccess: true,
     context: searchContext
@@ -1046,7 +1080,7 @@ async function runWebSearch(query) {
 }
 
 async function recommendPlatformsFromCurrentContext() {
-  var topic = (chatTextInput?.value || '').trim();
+  var topic = buildRecommendTopicFromSources();
   if (!topic) {
     topic = prompt('请输入要推荐平台的学习主题，或先上传文件/采集资料：') || '';
   }
@@ -2683,7 +2717,7 @@ if (chatRecentToggleBtn && chatRecentPanel) {
   chatRecentToggleBtn.addEventListener('click', function() {
     chatRecentPanel.classList.add('collapsed');
     if (chatHistoryBtn) chatHistoryBtn.classList.remove('active');
-    chatRecentToggleBtn.textContent = '收起';
+    chatRecentToggleBtn.textContent = '展开';
   });
 }
 if (notesFolderList) {
